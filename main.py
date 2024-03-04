@@ -1,9 +1,13 @@
 from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
+# 加载红白榜数据汇总.xlsx文件
 wb = load_workbook("./红白榜数据汇总.xlsx", data_only=True)
 # options = {"": "", "": ""}
+# 设置排序方式为男生排序
 cho = "男生排序"
 
+# 获取男生排序表的数据
 ws = wb[cho]
 
 
@@ -55,11 +59,37 @@ def main_sorting(data):
     return sorted_data
 
 
+# 根据"E"分数填充颜色
+def fill_color(ws):
+    """
+    score=100 红色
+    score>60 & score<65 绿色
+    score<60 黄色
+    """
+    fill_red = PatternFill("solid", fgColor="00FF0000")
+    fill_green = PatternFill("solid", fgColor="92D050")
+    fill_yellow = PatternFill("solid", fgColor="00FFFF00")
+
+    for row in ws.iter_rows(min_row=2):
+        score = int(row[-1].value)
+        for cell in row:
+            if score == 100:
+                cell.fill = fill_red
+            if 60 < score < 65:
+                cell.fill = fill_green
+            if 0 < score < 60:
+                cell.fill = fill_yellow
+
+
 if __name__ == "__main__":
+    # 获取男生排序表的数据
     data = get_data(ws)
+    # 主要排序:分数 降序
     sorted_data = main_sorting(data)
+    # 将排序后的数据写入EXCEL
     write_sorted_data(sorted_data, ws)
-    # TODO: 添加表格颜色
+    # 根据"E"分数填充颜色
+    fill_color(ws)
 
     wb.save("./sorted.xlsx")
     print("OK")
