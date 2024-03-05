@@ -1,4 +1,4 @@
-from openpyxl import load_workbook, Workbook
+from openpyxl import load_workbook, Workbook, cell
 from openpyxl.styles import PatternFill
 from openpyxl.utils import column_index_from_string
 import csv
@@ -117,9 +117,24 @@ class Excel_robot:
             for j, cell in enumerate(row):
                 try:
                     cell.value = sorted_data[i][j]
+                    if j == column_index_from_string("E") - 1:
+                        self.fill_color(cell=cell)
                 except Exception as e:
                     # print(e)
                     pass
+
+    def fill_color(self, cell: cell):
+        red = PatternFill("solid", fgColor="00FF0000")
+        green = PatternFill("solid", fgColor="92D050")
+        yellow = PatternFill("solid", fgColor="00FFFF00")
+
+        value = int(cell.value)
+        if value >= 100:
+            cell.fill = red
+        if 60 <= value < 65:
+            cell.fill = green
+        if value < 60:
+            cell.fill = yellow
 
 
 if __name__ == "__main__":
