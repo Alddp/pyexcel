@@ -2,6 +2,7 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import PatternFill
 from openpyxl.utils import column_index_from_string
 import csv
+import pyuca
 
 
 class Excel_robot:
@@ -76,6 +77,9 @@ class Excel_robot:
         根据列排序
         """
 
+        # 创建一个Unicode排序器
+        collator = pyuca.Collator()
+
         # sorted_col_index = column_index_from_string(col_string) - 1
         # sorted_data = sorted(data, key=lambda x: x[sorted_col_index], reverse=desc)
         # return sorted_data
@@ -84,7 +88,10 @@ class Excel_robot:
         if convert_to_int:
             data.sort(key=lambda x: int(x[sorted_col_index]), reverse=desc)
         else:
-            data.sort(key=lambda x: x[sorted_col_index], reverse=desc)
+            # data.sort(key=lambda x: x[sorted_col_index], reverse=desc)
+            data.sort(
+                key=lambda x: collator.sort_key(x[sorted_col_index]), reverse=True
+            )
 
     def sorting_data(self, data):
         self.sorting_column(data, "B")
