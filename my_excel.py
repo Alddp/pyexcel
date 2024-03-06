@@ -8,18 +8,25 @@ import pyuca
 class Excel_robot:
     """docstring for Excel_robot."""
 
-    def __init__(self, filename: str, data_only: bool, read_only: bool = False):
+    def __init__(
+        self,
+        filename: str,
+        data_only: bool,
+        filename_summery: str = str | None,
+        read_only: bool = False,
+    ):
         self.filename = filename
+        self.filename_summery = filename_summery
         self.wb = load_workbook(self.filename, data_only=data_only, read_only=read_only)
         self.max_row: int | None = None
         self.max_col: int | None = None
 
-    def get_sheet_names(self):
+    def get_sheet_names(self, wb: Workbook):
         """
         打印所有的sheet名称
         """
-        sheet_names = self.wb.sheetnames
-        print("sheets: " + str(sheet_names))
+        sheet_names = wb.sheetnames
+        print("sheets: " + str(sheet_names), end="\n\n")
         return sheet_names
 
     def get_data(
@@ -123,26 +130,51 @@ class Excel_robot:
                     # print(e)
                     pass
 
+    # 将分数分为各个阶段
+    def divide_score(self, score: int):
+        if score >= 100:
+            return "red"
+        if 60 <= score < 65:
+            return "green"
+        if score < 60:
+            return "yellow"
+        return None
+
     def fill_color(self, cell: cell):
         red = PatternFill("solid", fgColor="00FF0000")
         green = PatternFill("solid", fgColor="92D050")
         yellow = PatternFill("solid", fgColor="00FFFF00")
 
         value = int(cell.value)
-        if value >= 100:
+        # if value >= 100:
+        #     cell.fill = red
+        # if 60 <= value < 65:
+        #     cell.fill = green
+        # if value < 60:
+        #     cell.fill = yellow
+        stage = self.divide_score(value)
+        if stage == "red":
             cell.fill = red
-        if 60 <= value < 65:
+
+        elif stage == "green":
             cell.fill = green
-        if value < 60:
+
+        elif stage == "yellow":
             cell.fill = yellow
+        else:
+            pass
 
 
 if __name__ == "__main__":
 
     # 创建对象
-    robot = Excel_robot("./红白榜数据汇总.xlsx", data_only=True)
+    robot = Excel_robot(
+        filename="./红白榜数据汇总.xlsx",
+        filename_summery="./红白榜结果汇总.xlsx",
+        data_only=True,
+    )
     # 获取所有sheet
-    sheet_names = robot.get_sheet_names()
+    sheet_names = robot.get_sheet_names(robot.wb)
 
     # 导出sheet的内容到csv,并返回当前sheet名称
     sheet_male = robot.get_data(
@@ -150,14 +182,14 @@ if __name__ == "__main__":
         max_col_string="E",
         max_row=426,
     )
-    print(f"{sheet_male}.csv dump ok...")
+    print(f"{sheet_male}.csv dump ok...\n")
 
     sheet_female = robot.get_data(
         sheet_names[-2],
         max_col_string="E",
         max_row=381,
     )
-    print(f"{sheet_female}.csv dump ok...")
+    print(f"{sheet_female}.csv dump ok...\n")
 
     # 得到处理过的data
     processed_male_data = robot.read_csv(sheet_male)
@@ -167,8 +199,12 @@ if __name__ == "__main__":
     sorted_male_data = robot.sorting_data(processed_male_data)  # 男生排序
     sorted_female_data = robot.sorting_data(processed_female_data)  # 女生排序
 
-    # 写入Excel
+    # 写入Excel并填充颜色
     robot.write_to_wb(sheet_male, sorted_data=sorted_male_data, start_row=2)
     robot.write_to_wb(sheet_female, sorted_data=sorted_female_data, start_row=2)
     robot.wb.save(robot.filename + "sorted.xlsx")
-    print(f"{robot.filename} 已经保存")
+    print(f"{robot.filename} 已经保存\n")
+
+    # TODO: 将各个阶段的分数写入汇总表
+
+    print()
