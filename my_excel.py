@@ -1,4 +1,5 @@
 from openpyxl import load_workbook, Workbook, cell
+from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import PatternFill
 from openpyxl.utils import column_index_from_string
 from datetime import datetime
@@ -8,7 +9,7 @@ from cn2an import an2cn
 
 
 class Excel_robot:
-    """docstring for Excel_robot."""
+    """用于处理 Excel 数据的类"""
 
     def __init__(
         self,
@@ -17,6 +18,7 @@ class Excel_robot:
         filename_summery: str | None = None,
         read_only: bool = False,
     ):
+        """初始化 Excel_robot 对象"""
         self.filename = filename
         self.filename_summery = filename_summery
         self.wb = load_workbook(self.filename, data_only=data_only, read_only=read_only)
@@ -24,6 +26,7 @@ class Excel_robot:
         self.max_col: int | None = None
         self.summery_wb = load_workbook("./红白榜结果汇总.xlsx")
 
+        # 获取红榜（男）、红榜（女）、较差、白榜工作表
         self.red_male_sheet = self.summery_wb["红榜（男）"]
         self.red_female_sheet = self.summery_wb["红榜（女）"]
         self.green_sheet = self.summery_wb["较差"]
@@ -48,10 +51,7 @@ class Excel_robot:
         max_row: int | None = None,
         contains_first_line=False,
     ):
-        # 读取sheet所有内容写入data
-        """
-        sheet_name: 要读取的列表
-        """
+        """从指定的工作表中获取数据，并导出到 CSV 文件"""
         self.max_row = max_row
         self.max_col = column_index_from_string(max_col_string)
         ws = self.wb[sheet_name]
@@ -72,12 +72,12 @@ class Excel_robot:
         return sheet_name
 
     def read_csv(self, filename: str):
+        """从 CSV 文件中读取数据"""
         data = []
         with open(filename + ".csv", "r", encoding="utf-8") as f:
             reader = csv.reader(f)
             # 处理data的None值, 如果为存在None则忽略当行
             for row in reader:
-                # print(row)
                 if None in row or "" in row or len(row) < 1:
                     continue
                 filtered_row = [value for value in row]
@@ -92,27 +92,18 @@ class Excel_robot:
         desc=False,
         convert_to_int=False,
     ):
-        """
-        根据列排序
-        """
-
-        # 创建一个Unicode排序器
-        collator = pyuca.Collator()
-
-        # sorted_col_index = column_index_from_string(col_string) - 1
-        # sorted_data = sorted(data, key=lambda x: x[sorted_col_index], reverse=desc)
-        # return sorted_data
-
+        """根据指定列对数据进行排序"""
         sorted_col_index = column_index_from_string(col_string) - 1
         if convert_to_int:
             data.sort(key=lambda x: int(x[sorted_col_index]), reverse=desc)
         else:
-            # data.sort(key=lambda x: x[sorted_col_index], reverse=desc)
+            collator = pyuca.Collator()
             data.sort(
                 key=lambda x: collator.sort_key(x[sorted_col_index]), reverse=True
             )
 
     def sorting_data(self, data) -> list:
+        """对数据进行排序"""
         self.sorting_column(data, "B")
         self.sorting_column(data, "A")
         self.sorting_column(data, "E", desc=True, convert_to_int=True)
@@ -124,6 +115,7 @@ class Excel_robot:
         sorted_data,
         start_row: int,
     ):
+        """将排序后的数据写回到工作表中"""
         wb = self.wb
         ws = wb[sheet_name]
         for i, row in enumerate(
@@ -139,11 +131,10 @@ class Excel_robot:
                     if j == column_index_from_string("E") - 1:
                         self.fill_color(cell=cell)
                 except Exception as e:
-                    # print(e)
                     pass
 
-    # 将分数分为各个阶段
     def divide_score(self, score: int):
+        """将分数分为不同阶段"""
         if score >= 100:
             return "red"
         if 60 <= score < 65:
@@ -153,24 +144,17 @@ class Excel_robot:
         return None
 
     def fill_color(self, cell: cell):
+        """根据分数不同阶段填充单元格颜色"""
         red = PatternFill("solid", fgColor="00FF0000")
         green = PatternFill("solid", fgColor="92D050")
         yellow = PatternFill("solid", fgColor="00FFFF00")
 
         value = int(cell.value)
-        # if value >= 100:
-        #     cell.fill = red
-        # if 60 <= value < 65:
-        #     cell.fill = green
-        # if value < 60:
-        #     cell.fill = yellow
         stage = self.divide_score(value)
         if stage == "red":
             cell.fill = red
-
         elif stage == "green":
             cell.fill = green
-
         elif stage == "yellow":
             cell.fill = yellow
         else:
@@ -182,13 +166,13 @@ class Excel_robot:
         sheet_name,
         formatted_date_now,
     ):
-        # 读取csv,将符合条件的行复制到当前行
-        self.red_male_start_row = 4
-        self.red_female_start_row = 4
-        self.green_start_row = 4
-        self.yellow_start_row = 4
-
+        """将分类后的数据汇总到汇总表中"""
         for i, row in enumerate(sorted_data):
+
+            if sheet_name == "女生排序":
+                if i == 110:
+                    print()
+
             score = int(row[-1])
 
             if None in set(row):
@@ -197,7 +181,7 @@ class Excel_robot:
             stage = self.divide_score(score)
             if stage is None:
                 continue
-            # 判断类别
+
             if stage == "red":
                 if sheet_name == "男生排序":
                     ws = self.red_male_sheet
@@ -216,36 +200,29 @@ class Excel_robot:
                 self.yellow_start_row += 1
                 current_row = self.yellow_start_row
 
-            # 将当行写入汇总表
             for j, value in enumerate(row):
-
-                if j == len(row) - 1:  # 不写入分数列
+                if j == len(row) - 1:
                     continue
                 ws.cell(row=current_row, column=j + 1, value=value)
 
-        # 在最后一行的D列加上学院和日期
-        red_male_end_row = self.red_male_start_row + 1
-        red_female_end_row = self.red_female_start_row = 1
-        green_end_row = self.green_start_row = 1
-        yellow_end_row = self.yellow_start_row = 1
+    def sign_content(self, ws: Worksheet, row, column, formatted_date_now):
 
-        E_index = column_index_from_string("E")
-        D_index = column_index_from_string("D")
+        ws.cell(row=row, column=column, value="电子信息学院")
+        ws.cell(row=row + 1, column=column, value=formatted_date_now)
 
-        self.red_male_sheet.cell(row=red_male_end_row, column=D_index)
-        self.red_female_sheet.cell(row=red_female_end_row, column=D_index)
-        self.green_sheet.cell(row=green_end_row, column=E_index)
-        self.yellow_sheet.cell(row=yellow_end_row, column=E_index)
+        # sign_content(ws=self.red_male_sheet, row=red_male_end_row, column=D_index)
+        # sign_content(self.red_female_sheet, row=red_female_end_row, column=D_index)
+        # sign_content(ws=self.green_sheet, row=green_end_row, column=E_index)
+        # sign_content(ws=self.yellow_sheet, row=yellow_end_row, column=E_index)
 
 
 def calculate_date(start_date_string="2024-02-19"):
+    """计算当前日期与开始日期之间的天数，以及当前是第几周"""
     date_obj = datetime.strptime(start_date_string, "%Y-%m-%d")
-    current_date = datetime.now()  # 获取当前日期和时间
+    current_date = datetime.now()
     formatted_date_now = current_date.strftime("%Y年%m月%d日")
     delta = current_date - date_obj
     day_num = delta.days
-
-    # 计算当前是第几周
     count_week = int(day_num / 7)
     chinese_number = an2cn(count_week)
     week_string = "第" + chinese_number + "周"
@@ -310,6 +287,38 @@ if __name__ == "__main__":
     robot.summery(
         sorted_data=sorted_female_data,
         sheet_name=sheet_female,
+        formatted_date_now=formatted_date_now,
+    )
+    red_male_end_row = robot.red_male_start_row + 1
+    red_female_end_row = robot.red_female_start_row + 1
+    green_end_row = robot.green_start_row + 1
+    yellow_end_row = robot.yellow_start_row + 1
+
+    E_index = column_index_from_string("E")
+    D_index = column_index_from_string("D")
+
+    robot.sign_content(
+        ws=robot.red_male_sheet,
+        row=red_male_end_row,
+        column=D_index,
+        formatted_date_now=formatted_date_now,
+    )
+    robot.sign_content(
+        robot.red_female_sheet,
+        row=red_female_end_row,
+        column=D_index,
+        formatted_date_now=formatted_date_now,
+    )
+    robot.sign_content(
+        ws=robot.green_sheet,
+        row=green_end_row,
+        column=E_index,
+        formatted_date_now=formatted_date_now,
+    )
+    robot.sign_content(
+        ws=robot.yellow_sheet,
+        row=yellow_end_row,
+        column=E_index,
         formatted_date_now=formatted_date_now,
     )
 
