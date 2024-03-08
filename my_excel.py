@@ -69,6 +69,7 @@ class Excel_robot:
             writer = csv.writer(f)
             writer.writerows(value for value in data)
 
+        print(f"{sheet_name}.csv dump ok...\n")  # 提示完成
         return sheet_name
 
     def read_csv(self, filename: str):
@@ -78,9 +79,14 @@ class Excel_robot:
             reader = csv.reader(f)
             # 处理data的None值, 如果为存在None则忽略当行
             for row in reader:
-                if None in row or "" in row or len(row) < 1:
+                if None in row or "" in row or len(row) < 1 or int(row[-1]) == 0:
                     continue
-                filtered_row = [value for value in row]
+                # filtered_row = [value for value in row]
+                # 将每行的最后一个字符串数字转换为整数
+                last_element_int = int(row[-1])
+
+                # 打印每行的内容（除了最后一个元素为整数外，其他元素仍然为字符串）
+                filtered_row = row[:-1] + [last_element_int]
                 data.append(filtered_row)
 
         return data
@@ -164,7 +170,6 @@ class Excel_robot:
         self,
         sorted_data,
         sheet_name,
-        formatted_date_now,
     ):
         """将分类后的数据汇总到汇总表中"""
         for i, row in enumerate(sorted_data):
@@ -246,14 +251,14 @@ if __name__ == "__main__":
         max_col_string="E",
         max_row=None,
     )
-    print(f"{sheet_male}.csv dump ok...\n")
+    # print(f"{sheet_male}.csv dump ok...\n")
 
     sheet_female = robot.get_data(
         sheet_names[-2],
         max_col_string="E",
         max_row=None,
     )
-    print(f"{sheet_female}.csv dump ok...\n")
+    # print(f"{sheet_female}.csv dump ok...\n")
 
     # 得到处理过的data
     processed_male_data = robot.read_csv(sheet_male)
@@ -282,12 +287,10 @@ if __name__ == "__main__":
     robot.summery(
         sorted_data=sorted_male_data,
         sheet_name=sheet_male,
-        formatted_date_now=formatted_date_now,
     )
     robot.summery(
         sorted_data=sorted_female_data,
         sheet_name=sheet_female,
-        formatted_date_now=formatted_date_now,
     )
     red_male_end_row = robot.red_male_start_row + 1
     red_female_end_row = robot.red_female_start_row + 1
