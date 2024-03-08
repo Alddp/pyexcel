@@ -4,6 +4,7 @@ res/
 .vscode/
 # # Byte-compiled / optimized / DLL files
 __pycache__/
+!红白榜结果汇总.xlsx
 # *.py[cod]
 # *$py.class
 
