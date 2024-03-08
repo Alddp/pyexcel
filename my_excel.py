@@ -1,8 +1,10 @@
 from openpyxl import load_workbook, Workbook, cell
 from openpyxl.styles import PatternFill
 from openpyxl.utils import column_index_from_string
+from datetime import datetime
 import csv
 import pyuca
+from cn2an import an2cn
 
 
 class Excel_robot:
@@ -12,7 +14,7 @@ class Excel_robot:
         self,
         filename: str,
         data_only: bool,
-        filename_summery: str = str | None,
+        filename_summery: str | None = None,
         read_only: bool = False,
     ):
         self.filename = filename
@@ -178,6 +180,7 @@ class Excel_robot:
         self,
         sorted_data,
         sheet_name,
+        formatted_date_now,
     ):
         # 读取csv,将符合条件的行复制到当前行
         self.red_male_start_row = 4
@@ -187,6 +190,11 @@ class Excel_robot:
 
         for i, row in enumerate(sorted_data):
             score = int(row[-1])
+
+            if None in set(row):
+                continue
+
+            # 在最后一行的D列加上学院和日期
             stage = self.divide_score(score)
             if stage is None:
                 continue
@@ -215,6 +223,21 @@ class Excel_robot:
                 if j == len(row) - 1:  # 不写入分数列
                     continue
                 ws.cell(row=current_row, column=j + 1, value=value)
+        print()
+
+
+def calculate_date(start_date_string="2024-02-19"):
+    date_obj = datetime.strptime(start_date_string, "%Y-%m-%d")
+    current_date = datetime.now()  # 获取当前日期和时间
+    formatted_date_now = current_date.strftime("%Y年%m月%d日")
+    delta = current_date - date_obj
+    day_num = delta.days
+
+    # 计算当前是第几周
+    count_week = int(day_num / 7)
+    chinese_number = an2cn(count_week)
+    week_string = "第" + chinese_number + "周"
+    return week_string, formatted_date_now
 
 
 if __name__ == "__main__":
@@ -222,7 +245,7 @@ if __name__ == "__main__":
     # 创建对象
     robot = Excel_robot(
         filename="./红白榜数据汇总.xlsx",
-        filename_summery="./红白榜结果汇总.xlsx",
+        # filename_summery="./红白榜结果汇总.xlsx",
         data_only=True,
     )
     # 获取所有sheet
@@ -257,22 +280,26 @@ if __name__ == "__main__":
     robot.wb.save(robot.filename + "sorted.xlsx")
     print(f"{robot.filename} 已经保存\n")
 
-    # TODO: 将各个阶段的分数写入汇总表
-    # 加载汇总表的sheets
-    # '白榜', '较差', '红榜（男）', '红榜（女）'
-    # robot.summery_wb = load_workbook("./红白榜结果汇总.xlsx")
+    # 计算日期
+    chinese_number, formatted_date_now = calculate_date()
 
-    # red_male_sheet = robot.summery_wb["红榜（男）"]
-    # red_female_sheet = robot.summery_wb["红榜（女）"]
-    # green_sheet = robot.summery_wb["较差"]
-    # yellow_sheet = robot.summery_wb["白榜"]
-    # red_male_start_row = 4
-    # red_female_start_row = 4
-    # green_start_row = 4
-    # yellow_start_row = 4
+    # 自动写入第几周
+    robot.red_male_sheet["A2"] = chinese_number
+    robot.red_female_sheet["A2"] = chinese_number
+    robot.green_sheet["A2"] = chinese_number
+    robot.yellow_sheet["A2"] = chinese_number
 
-    robot.summery(sorted_data=sorted_male_data, sheet_name=sheet_male)
-    robot.summery(sorted_data=sorted_female_data, sheet_name=sheet_female)
+    # 将各个阶段的分数写入汇总表
+    robot.summery(
+        sorted_data=sorted_male_data,
+        sheet_name=sheet_male,
+        formatted_date_now=formatted_date_now,
+    )
+    robot.summery(
+        sorted_data=sorted_female_data,
+        sheet_name=sheet_female,
+        formatted_date_now=formatted_date_now,
+    )
 
     robot.summery_wb.save("./汇总.xlsx")
     print("ok")
