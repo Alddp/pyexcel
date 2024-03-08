@@ -194,7 +194,6 @@ class Excel_robot:
             if None in set(row):
                 continue
 
-            # 在最后一行的D列加上学院和日期
             stage = self.divide_score(score)
             if stage is None:
                 continue
@@ -223,7 +222,20 @@ class Excel_robot:
                 if j == len(row) - 1:  # 不写入分数列
                     continue
                 ws.cell(row=current_row, column=j + 1, value=value)
-        print()
+
+        # 在最后一行的D列加上学院和日期
+        red_male_end_row = self.red_male_start_row + 1
+        red_female_end_row = self.red_female_start_row = 1
+        green_end_row = self.green_start_row = 1
+        yellow_end_row = self.yellow_start_row = 1
+
+        E_index = column_index_from_string("E")
+        D_index = column_index_from_string("D")
+
+        self.red_male_sheet.cell(row=red_male_end_row, column=D_index)
+        self.red_female_sheet.cell(row=red_female_end_row, column=D_index)
+        self.green_sheet.cell(row=green_end_row, column=E_index)
+        self.yellow_sheet.cell(row=yellow_end_row, column=E_index)
 
 
 def calculate_date(start_date_string="2024-02-19"):
