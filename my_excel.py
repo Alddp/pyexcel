@@ -124,6 +124,7 @@ class Excel_robot:
         """将排序后的数据写回到工作表中"""
         wb = self.wb
         ws = wb[sheet_name]
+        count_row = len(sorted_data) + 1
         for i, row in enumerate(
             ws.iter_rows(
                 min_row=start_row,
@@ -136,14 +137,21 @@ class Excel_robot:
                     cell.value = sorted_data[i][j]
                     if j == column_index_from_string("E") - 1:
                         self.fill_color(cell=cell)
+
                 except Exception as e:
                     pass
+
+        for row in ws.iter_rows(
+            min_row=count_row + 1, max_col=column_index_from_string("E")
+        ):
+            for cell in row:
+                cell.value = None
 
     def divide_score(self, score: int):
         """将分数分为不同阶段"""
         if score >= 100:
             return "red"
-        if 60 <= score < 65:
+        if 60 <= score <= 65:
             return "green"
         if 0 < score < 60:
             return "yellow"
