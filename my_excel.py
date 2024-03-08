@@ -209,8 +209,11 @@ class Excel_robot:
                 self.yellow_start_row += 1
                 current_row = self.yellow_start_row
 
+            # 将当行写入汇总表
             for j, value in enumerate(row):
-                # 将当行写入汇总表
+
+                if j == len(row) - 1:  # 不写入分数列
+                    continue
                 ws.cell(row=current_row, column=j + 1, value=value)
 
 
