@@ -20,6 +20,16 @@ class Excel_robot:
         self.wb = load_workbook(self.filename, data_only=data_only, read_only=read_only)
         self.max_row: int | None = None
         self.max_col: int | None = None
+        self.summery_wb = load_workbook("./红白榜结果汇总.xlsx")
+
+        self.red_male_sheet = self.summery_wb["红榜（男）"]
+        self.red_female_sheet = self.summery_wb["红榜（女）"]
+        self.green_sheet = self.summery_wb["较差"]
+        self.yellow_sheet = self.summery_wb["白榜"]
+        self.red_male_start_row = 4
+        self.red_female_start_row = 4
+        self.green_start_row = 4
+        self.yellow_start_row = 4
 
     def get_sheet_names(self, wb: Workbook):
         """
@@ -100,7 +110,7 @@ class Excel_robot:
                 key=lambda x: collator.sort_key(x[sorted_col_index]), reverse=True
             )
 
-    def sorting_data(self, data):
+    def sorting_data(self, data) -> list:
         self.sorting_column(data, "B")
         self.sorting_column(data, "A")
         self.sorting_column(data, "E", desc=True, convert_to_int=True)
@@ -117,7 +127,7 @@ class Excel_robot:
         for i, row in enumerate(
             ws.iter_rows(
                 min_row=start_row,
-                max_row=self.max_row + 1,
+                max_row=self.max_row,
                 max_col=self.max_col,
             )
         ):
@@ -136,7 +146,7 @@ class Excel_robot:
             return "red"
         if 60 <= score < 65:
             return "green"
-        if score < 60:
+        if 0 < score < 60:
             return "yellow"
         return None
 
@@ -164,6 +174,45 @@ class Excel_robot:
         else:
             pass
 
+    def summery(
+        self,
+        sorted_data,
+        sheet_name,
+    ):
+        # 读取csv,将符合条件的行复制到当前行
+        self.red_male_start_row = 4
+        self.red_female_start_row = 4
+        self.green_start_row = 4
+        self.yellow_start_row = 4
+
+        for i, row in enumerate(sorted_data):
+            score = int(row[-1])
+            stage = self.divide_score(score)
+            if stage is None:
+                continue
+            # 判断类别
+            if stage == "red":
+                if sheet_name == "男生排序":
+                    ws = self.red_male_sheet
+                    self.red_male_start_row += 1
+                    current_row = self.red_male_start_row
+                if sheet_name == "女生排序":
+                    ws = self.red_female_sheet
+                    self.red_female_start_row += 1
+                    current_row = self.red_female_start_row
+            elif stage == "green":
+                ws = self.green_sheet
+                self.green_start_row += 1
+                current_row = self.green_start_row
+            elif stage == "yellow":
+                ws = self.yellow_sheet
+                self.yellow_start_row += 1
+                current_row = self.yellow_start_row
+
+            for j, value in enumerate(row):
+                # 将当行写入汇总表
+                ws.cell(row=current_row, column=j + 1, value=value)
+
 
 if __name__ == "__main__":
 
@@ -180,14 +229,14 @@ if __name__ == "__main__":
     sheet_male = robot.get_data(
         sheet_names[-1],
         max_col_string="E",
-        max_row=426,
+        max_row=None,
     )
     print(f"{sheet_male}.csv dump ok...\n")
 
     sheet_female = robot.get_data(
         sheet_names[-2],
         max_col_string="E",
-        max_row=381,
+        max_row=None,
     )
     print(f"{sheet_female}.csv dump ok...\n")
 
@@ -206,5 +255,21 @@ if __name__ == "__main__":
     print(f"{robot.filename} 已经保存\n")
 
     # TODO: 将各个阶段的分数写入汇总表
+    # 加载汇总表的sheets
+    # '白榜', '较差', '红榜（男）', '红榜（女）'
+    # robot.summery_wb = load_workbook("./红白榜结果汇总.xlsx")
 
-    print()
+    # red_male_sheet = robot.summery_wb["红榜（男）"]
+    # red_female_sheet = robot.summery_wb["红榜（女）"]
+    # green_sheet = robot.summery_wb["较差"]
+    # yellow_sheet = robot.summery_wb["白榜"]
+    # red_male_start_row = 4
+    # red_female_start_row = 4
+    # green_start_row = 4
+    # yellow_start_row = 4
+
+    robot.summery(sorted_data=sorted_male_data, sheet_name=sheet_male)
+    robot.summery(sorted_data=sorted_female_data, sheet_name=sheet_female)
+
+    robot.summery_wb.save("./汇总.xlsx")
+    print("ok")
