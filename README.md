@@ -10,7 +10,14 @@
 
 使用方法：
 
-下载[my_excel.py](https://github.com/Alddp/pyexcel/blob/main/my_excel.py)和[红白榜结果汇总.xlsx](https://github.com/Alddp/pyexcel/blob/main/红白榜结果汇总.xlsx)和数据汇总表放在新建的英文文件夹中，运行my_excel.py即可。
+**配置python环境后才能使用**
+
+![](res\Clip_2024-03-10_14-59-11.png)
+
+1. 下载[my_excel.py](https://github.com/Alddp/pyexcel/blob/main/my_excel.py)和[红白榜结果汇总.xlsx](https://github.com/Alddp/pyexcel/blob/main/红白榜结果汇总.xlsx)和数据汇总表放在新建的英文文件夹中
+2. 在地址栏输入cmd回车![Clip_2024-03-10_14-55-36](res\Clip_2024-03-10_14-55-36.png)
+3. 输入  python my_excel.py![Clip_2024-03-10_14-53-00](res\Clip_2024-03-10_14-53-00.png)
+4. 成功![Clip_2024-03-10_14-53-23](D:\Destok\pyexcel\res\Clip_2024-03-10_14-53-23.png)
 
 ------
 
